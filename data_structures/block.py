@@ -258,7 +258,7 @@ def less_than_target(byte_string, target):
     :param2 targer: an integer, a target to which byte_string is compared  
     :returns: a boolean, true if the byte_string integer is less than target. false otherwise
     """
-    return toInt(byte_string) < target
+    return hash_to_int(byte_string) < target
 
 def bytes_to_int(byte_string):
     """
@@ -313,6 +313,13 @@ def mine(previous_hash, data, target):
     # Concatonates the previous hash, data, timestamp, exponent of target, and nonce into a byte string
     block_header = previous_hash + data + int_to_bytes(timestamp) + log_target_bytes(target) + long_to_bytes(nonce)
     block_hash = hash_SHA(block_header)
+
+    while not (less_than_target(block_hash, target)):
+        nonce += 1
+        timestamp = time_now()
+        block_header = previous_hash + data + int_to_bytes(timestamp) + log_target_bytes(target) + long_to_bytes(nonce)
+        block_hash = hash_SHA(block_header)
+        
     return block_header
 
 def slice_nonce(block_header):
@@ -363,3 +370,22 @@ def slice_target(block_header):
     """
     return block_header[68:70]
 
+def hash_to_int(_hash):
+    return int.from_bytes(_hash, byteorder='big')
+
+
+def parse_block(block_header):
+    """
+    Takes a concatonated 74 byte string and runs it through the the previously defined slice functions
+    Those functions outputs are added to a dictionary
+
+    :param1 block_header: a 74 byte string containing the information of a block
+    :returns: a dictionary cotaining the previous hash, data, timestamp, target and nonce of the block
+    """
+    parsed_block = {}
+    parsed_block["prev_hash"] = slice_prev_hash(block_header)
+    parsed_block["data"] = slice_data(block_header)
+    parsed_block["timestamp"] = slice_timestamp(block_header)
+    parsed_block["target"] = slice_target(block_header)
+    parsed_block["nonce"] = slice_nonce(block_header)
+    return parsed_block
